@@ -1,7 +1,8 @@
 use std::fs;
+use clap::Parser;
 
 use gtk::{prelude::*, Window, WindowType};
-use webkit2gtk::{SettingsExt, WebContext, WebContextExt, WebView, WebViewExt};
+use webkit2gtk::{WebContext,  WebView, WebViewExt};
 use gtk::Button;
 //use gtk::{prelude::*, Switch, Align};
 //use gtk::{Application, ApplicationWindow};
@@ -9,9 +10,7 @@ use gtk::Button;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-fn main() {
-    gtk::init().unwrap();
-
+fn build_ui(md_file: Option<String>) -> Window {
     let window = Window::new(WindowType::Toplevel);
 
     window.set_default_size(1080, 1080);
@@ -30,7 +29,14 @@ fn main() {
     webview.borrow().set_valign(gtk::Align::Fill);
 
     // webview.load_uri("https://crates.io/");
-    let markdown = fs::read_to_string("test.md").expect("failed to read file");
+    let markdown: String = match md_file {
+        Some(file) => {
+            fs::read_to_string(file).expect("failed to read file")
+        }
+        None => {
+            "# lol".to_string()
+        }
+    };
     let html: String = markdown::to_html(&markdown);
     webview.borrow().load_html(html.as_str(), None);
 
@@ -110,6 +116,27 @@ fn main() {
       gtk::main_quit();
       gtk::glib::Propagation::Proceed
     });
+
+    window
+}
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long, default_value_t = String::from(""))]
+    pub file: String,
+}
+
+fn main() {
+    let args = Args::parse();
+
+    gtk::init().unwrap();
+    
+    let file: Option<String> = match args.file.as_str() {
+        "" => None,
+        file => Some(file.to_string())
+    };
+    let _window = build_ui(file);
 
     gtk::main();
 }
