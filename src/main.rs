@@ -111,12 +111,11 @@ fn build_ui(md_file: Option<String>, light: bool) -> Window {
 
     let webview_clone = webview.clone();
     file_chooser.connect_file_set(move |idk| {
-        println!("{:?}",idk.file().unwrap().path());
         let file_path = idk.file().expect("file error").path().unwrap();
         let markdown_text = fs::read_to_string(file_path).expect("failed to read file");
         let mut html_idk = markdown::to_html(&markdown_text);
         if !light {
-            html_idk = format!("<html><head><style>{DARK_STYLE}</style></head><body>{html}</body></html>");
+            html_idk = format!("<html><head><style>{DARK_STYLE}</style></head><body>{html_idk}</body></html>");
         }
         webview_clone.borrow_mut().load_html(&html_idk, None);
     });
