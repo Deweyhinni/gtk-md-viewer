@@ -10,7 +10,10 @@ use gtk::Button;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-fn build_ui(md_file: Option<String>) -> Window {
+mod style;
+use crate::style::DARK_STYLE;
+
+fn build_ui(md_file: Option<String>, light: bool) -> Window {
     let window = Window::new(WindowType::Toplevel);
 
     window.set_default_size(1080, 1080);
@@ -37,7 +40,10 @@ fn build_ui(md_file: Option<String>) -> Window {
             "# lol".to_string()
         }
     };
-    let html: String = markdown::to_html(&markdown);
+    let mut html: String = markdown::to_html(&markdown);
+    if !light {
+        html = format!("<html><head><style>{DARK_STYLE}</style></head><body>{html}</body></html>");
+    }
     webview.borrow().load_html(html.as_str(), None);
 
     //let settings = WebViewExt::settings(&webview.clone().take()).unwrap();
@@ -108,7 +114,10 @@ fn build_ui(md_file: Option<String>) -> Window {
         println!("{:?}",idk.file().unwrap().path());
         let file_path = idk.file().expect("file error").path().unwrap();
         let markdown_text = fs::read_to_string(file_path).expect("failed to read file");
-        let html_idk = markdown::to_html(&markdown_text);
+        let mut html_idk = markdown::to_html(&markdown_text);
+        if !light {
+            html_idk = format!("<html><head><style>{DARK_STYLE}</style></head><body>{html}</body></html>");
+        }
         webview_clone.borrow_mut().load_html(&html_idk, None);
     });
 
@@ -123,20 +132,18 @@ fn build_ui(md_file: Option<String>) -> Window {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, default_value_t = String::from(""))]
-    pub file: String,
+    pub file: Option<String>,
+
+    #[arg(short, long)]
+    pub light: bool,
 }
 
 fn main() {
     let args = Args::parse();
 
     gtk::init().unwrap();
-    
-    let file: Option<String> = match args.file.as_str() {
-        "" => None,
-        file => Some(file.to_string())
-    };
-    let _window = build_ui(file);
+
+    let _window = build_ui(args.file, args.light);
 
     gtk::main();
 }
